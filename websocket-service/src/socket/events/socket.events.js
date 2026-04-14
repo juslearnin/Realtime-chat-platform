@@ -14,6 +14,8 @@ const SOCKET_EVENTS = {
   ROOM_USERS: "room_users",
 
   USER_LEFT: "user_left",
+
+  REGISTER_USER: "register_user"
 };
 
 module.exports = SOCKET_EVENTS;

@@ -1,35 +1,35 @@
 require("dotenv").config();
-const logger =
-  require("./utils/logger");
+const logger = require("./utils/logger");
 const express = require("express");
 const http = require("http");
-
 const { initializeSocket } = require("./socket/socket");
+const connectDB = require("./config/db");
+
+// DEBUG: Check if .env is actually loading
+if (!process.env.MONGO_URI) {
+  console.error("❌ ERROR: MONGO_URI is not defined in .env file!");
+  console.log("Current working directory:", process.cwd());
+  process.exit(1); // Stop the app before it crashes Mongoose
+}
 
 const app = express();
-
 app.use(express.json());
 
-// Health check route
+// Connect to MongoDB
+connectDB();
+
 app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-  });
+  res.json({ status: "ok" });
 });
 
 const PORT = process.env.PORT || 5000;
-
 const server = http.createServer(app);
 
-// Initialize socket
 initializeSocket(server);
 
 server.listen(PORT, () => {
-  logger.info(
-    `WebSocket server running on port ${PORT}`
-  );
+  logger.info(`WebSocket server running on port ${PORT}`);
 });
-
 //Browser → HTTP Server → Socket.io → Persistent Connection
 /*What We Achieved
 
