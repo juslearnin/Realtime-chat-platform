@@ -1,5 +1,6 @@
 require("dotenv").config();
-
+const logger =
+  require("./utils/logger");
 const express = require("express");
 const http = require("http");
 
@@ -24,7 +25,7 @@ const server = http.createServer(app);
 initializeSocket(server);
 
 server.listen(PORT, () => {
-  console.log(
+  logger.info(
     `WebSocket server running on port ${PORT}`
   );
 });

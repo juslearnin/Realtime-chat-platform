@@ -10,6 +10,9 @@ const {
   leaveAllRooms
 } = require("../../services/userRegistry");
 
+const logger =
+  require("../../utils/logger");
+
 
 function registerMessageHandlers(io, socket) {
 
@@ -18,7 +21,7 @@ function registerMessageHandlers(io, socket) {
 
     registerUser(socket.id, username);
 
-    console.log(
+    logger.info(
       `User registered: ${username}`
     );
 
@@ -44,7 +47,7 @@ function registerMessageHandlers(io, socket) {
         users
       );
 
-      console.log(
+      logger.info(
         `Socket ${socket.id} joined ${roomId}`
       );
 
@@ -78,7 +81,7 @@ function registerMessageHandlers(io, socket) {
   // Disconnect
 socket.on(SOCKET_EVENTS.DISCONNECT, () => {
 
-  console.log(
+  logger.info(
     `Socket disconnecting: ${socket.id}`
   );
 
@@ -102,7 +105,7 @@ socket.on(SOCKET_EVENTS.DISCONNECT, () => {
   // Remove user from registry
   removeUser(socket.id);
 
-  console.log(
+  logger.info(
     `Socket disconnected ${socket.id}`
   );
 
