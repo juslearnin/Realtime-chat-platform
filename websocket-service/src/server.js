@@ -28,3 +28,61 @@ server.listen(PORT, () => {
     `WebSocket server running on port ${PORT}`
   );
 });
+
+//Browser → HTTP Server → Socket.io → Persistent Connection
+/*What We Achieved
+
+We created a Socket.io WebSocket server attached to Express.
+
+How It Works Internally
+
+Flow:
+
+Browser → HTTP Server → Socket.io → Persistent Connection
+
+When this runs:
+
+initializeSocket(server);
+
+Internally:
+
+HTTP server starts
+Socket.io attaches to it
+Client connects
+Persistent WebSocket opens
+
+This line:
+
+io.on("connection", socket => {})
+
+means:
+
+"Whenever a user connects, create a new socket session."
+
+Each connected user gets:
+
+Unique socket.id
+
+Example:
+
+User connected: kf83hdf93
+
+How It Works
+
+Instead of:
+
+HTTP request → response
+
+We now use:
+
+emit(eventName, data)
+
+Example:
+
+socket.emit("send_message", data);
+
+Server listens:
+
+socket.on("send_message", handler);
+
+*/
