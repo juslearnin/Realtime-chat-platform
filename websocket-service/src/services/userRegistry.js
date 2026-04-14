@@ -61,6 +61,21 @@ function leaveRoom(socketId, roomId) {
 
 }
 
+function leaveAllRooms(socketId) {
+
+  const user = socketToUserMap.get(socketId);
+
+  if (!user) return [];
+
+  const rooms = Array.from(user.rooms);
+
+  rooms.forEach(roomId => {
+    leaveRoom(socketId, roomId);
+  });
+
+  return rooms;
+
+}
 
 // Remove user completely
 function removeUser(socketId) {
@@ -103,5 +118,6 @@ module.exports = {
   leaveRoom,
   removeUser,
   getUsersInRoom,
-  getUser
+  getUser,
+  leaveAllRooms
 };

@@ -5,7 +5,9 @@ const {
   registerUser,
   joinRoom,
   removeUser,
-  getUsersInRoom
+  getUsersInRoom,
+  leaveRoom,
+  leaveAllRooms
 } = require("../../services/userRegistry");
 
 
@@ -38,7 +40,7 @@ function registerMessageHandlers(io, socket) {
 
       // Notify users in room
       io.to(roomId).emit(
-        "room_users",
+         SOCKET_EVENTS.ROOM_USERS,
         users
       );
 
@@ -74,15 +76,61 @@ function registerMessageHandlers(io, socket) {
 
 
   // Disconnect
-  socket.on("disconnect", () => {
+socket.on(SOCKET_EVENTS.DISCONNECT, () => {
 
-    removeUser(socket.id);
+  console.log(
+    `Socket disconnecting: ${socket.id}`
+  );
 
-    console.log(
-      `Socket disconnected ${socket.id}`
+  // Remove user from all rooms
+  const rooms =
+    leaveAllRooms(socket.id);
+
+  // Notify remaining users
+  rooms.forEach(roomId => {
+
+    const users =
+      getUsersInRoom(roomId);
+
+    io.to(roomId).emit(
+      SOCKET_EVENTS.ROOM_USERS,
+      users
     );
 
   });
+
+  // Remove user from registry
+  removeUser(socket.id);
+
+  console.log(
+    `Socket disconnected ${socket.id}`
+  );
+
+});
+
+  socket.on(
+  SOCKET_EVENTS.LEAVE_ROOM,
+  (roomId) => {
+
+    leaveRoom(socket.id, roomId);
+
+    socket.leave(roomId);
+
+    const users =
+      getUsersInRoom(roomId);
+
+    io.to(roomId).emit(
+      SOCKET_EVENTS.ROOM_USERS,
+      users
+    );
+
+    io.to(roomId).emit(
+      SOCKET_EVENTS.USER_LEFT,
+      socket.id
+    );
+
+  }
+);
 
 }
 

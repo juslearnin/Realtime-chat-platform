@@ -8,6 +8,12 @@ const SOCKET_EVENTS = {
   RECEIVE_MESSAGE: "receive_message",
 
   DISCONNECT: "disconnect",
+
+  LEAVE_ROOM: "leave_room",
+
+  ROOM_USERS: "room_users",
+
+  USER_LEFT: "user_left",
 };
 
 module.exports = SOCKET_EVENTS;
