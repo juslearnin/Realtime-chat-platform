@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Realtime Chat Platform</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        input { display: block; width: 95%; margin-bottom: 10px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 15px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        ul { list-style: none; padding: 0; margin-top: 20px; border-top: 1px solid #eee; }
+        li { padding: 8px 0; border-bottom: 1px solid #eee; }
+        .status { color: green; font-size: 0.8em; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Realtime Chat</h2>
+    <div id="status" class="status">Connecting...</div>
+
+    <input id="name" placeholder="Your Display Name" />
+    <input id="room" placeholder="Room ID (e.g. 'coding-room')" />
+    
+    <button onclick="joinRoom()">Join Room</button>
+
+    <ul id="messages"></ul>
+
+    <input id="message" placeholder="Type a message..." />
+    <button onclick="sendMessage()">Send Message</button>
+</div>
+
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    // 1. Initialize Connection
+    const socket = io("http://localhost:5000");
+
+    // Constants to match your socket.events.js
+    const EVENTS = {
+        REGISTER_USER: "register_user",
+        JOIN_ROOM: "join_room",
+        SEND_MESSAGE: "send_message",
+        RECEIVE_MESSAGE: "receive_message",
+        ROOM_USERS: "room_users"
+    };
+
+    socket.on("connect", () => {
+        document.getElementById("status").textContent = "Connected as: " + socket.id;
+    });
+
+    // 2. Join Room Logic
+    function joinRoom() {
+        const name = document.getElementById("name").value;
+        const room = document.getElementById("room").value;
+
+        if (!name || !room) return alert("Please enter Name and Room ID");
+
+        // Register the user first
+        socket.emit(EVENTS.REGISTER_USER, name);
+        // Join the specific room
+        socket.emit(EVENTS.JOIN_ROOM, room);
+        
+        console.log(`Attempting to join room: ${room}`);
+    }
+
+    // 3. Send Message Logic
+    function sendMessage() {
+        const room = document.getElementById("room").value;
+        const message = document.getElementById("message").value;
+
+        if (!room || !message) return alert("Join a room and type a message!");
+
+        // Payload matches your messageSchema requirements
+        const payload = {
+            roomId: room,
+            message: message
+        };
+
+        socket.emit(EVENTS.SEND_MESSAGE, payload);
+        document.getElementById("message").value = ""; // Clear input
+    }
+
+    // 4. Listen for Messages
+    socket.on(EVENTS.RECEIVE_MESSAGE, (data) => {
+        const li = document.createElement("li");
+        // data.socketId comes from your backend: io.to(roomId).emit("receiveMessage", { socketId, message })
+       li.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
+        document.getElementById("messages").appendChild(li);
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+ 
+    socket.on("chat_history", (messages) => {
+  const chatBox = document.getElementById("messages");
+  chatBox.innerHTML = ""; 
+
+  messages.forEach(msg => {
+    const li = document.createElement("li");
+    
+    // Debug: Check the console to see what the 'msg' object actually contains
+    console.log("History message object:", msg);
+
+    // Use msg.username (Backend) or msg.sender (check your model)
+    const name = msg.username || "Unknown User"; 
+    
+    li.textContent = `${name}: ${msg.message}`;
+    chatBox.appendChild(li);
+  });
+});
+    // Listen for errors from Joi validation or logic
+    socket.on("error", (err) => {
+        alert("Server Error: " + err.message);
+    });
+
+    socket.on(EVENTS.ROOM_USERS, (users) => {
+        console.log("Current users in room:", users);
+    });
+</script>
+
+</body>
+</html>
