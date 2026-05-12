@@ -4,6 +4,7 @@ const express = require("express");
 const http = require("http");
 const { initializeSocket } = require("./socket/socket");
 const connectDB = require("./config/db");
+const authRoutes = require("./routes/auth.routes");
 
 // DEBUG: Check if .env is actually loading
 if (!process.env.MONGO_URI) {
@@ -12,8 +13,10 @@ if (!process.env.MONGO_URI) {
   process.exit(1); // Stop the app before it crashes Mongoose
 }
 
+
 const app = express();
 app.use(express.json());
+app.use("/api/auth", authRoutes);
 
 // Connect to MongoDB
 connectDB();
