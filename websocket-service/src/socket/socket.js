@@ -2,7 +2,10 @@ const { Server } = require("socket.io");
 const SOCKET_EVENTS = require("./events/socket.events"); // Fixed Path
 const registerMessageHandlers = require("./handlers/message.handler"); // Fixed Path
 const logger = require("../utils/logger");
+const jwt = require("jsonwebtoken");
 
+const User =
+  require("../model/user.model");
 let io;
 
 function initializeSocket(server) {
@@ -14,8 +17,72 @@ function initializeSocket(server) {
 
   logger.info("Socket.io initialized");
 
+  io.use(async (socket, next) => {
+
+  try {
+
+    // Get token
+    const token =
+      socket.handshake.auth.token;
+
+    if (!token) {
+
+      return next(
+        new Error("Authentication error")
+      );
+
+    }
+
+    // Verify token
+    const decoded =
+      jwt.verify(
+        token,
+        process.env.JWT_SECRET
+      );
+
+    // Find user
+    const user =
+      await User.findById(
+        decoded.userId
+      );
+
+    if (!user) {
+
+      return next(
+        new Error("User not found")
+      );
+
+    }
+
+    // Attach user to socket
+    socket.user = user;
+
+    logger.info(
+      `Authenticated socket: ${user.email}`
+    );
+
+    next();
+
+  }
+  catch (err) {
+
+    logger.error(
+      `Socket auth error: ${err.message}`
+    );
+
+    next(
+      new Error("Authentication failed")
+    );
+
+  }
+
+});
+
   io.on(SOCKET_EVENTS.CONNECTION, (socket) => {
-    logger.info(`User connected: ${socket.id}`);
+    logger.info(
+  `User connected:
+   ${socket.user.email}`
+);
 
     // Register handlers - passing both io and socket
     registerMessageHandlers(io, socket);

@@ -79,7 +79,7 @@ function registerMessageHandlers(io, socket) {
       // Save to MongoDB
       const newMessage = new Message({
         roomId,
-        socketId: socket.id,
+        socketId: socket.user._id,
         username: displayName, // Added username to the saved model
         message
       });
