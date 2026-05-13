@@ -5,6 +5,9 @@ const http = require("http");
 const { initializeSocket } = require("./socket/socket");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/auth.routes");
+const {
+  connectRedis
+} = require("./config/redis");
 
 // DEBUG: Check if .env is actually loading
 if (!process.env.MONGO_URI) {
@@ -21,6 +24,7 @@ app.use("/api/auth", authRoutes);
 // Connect to MongoDB
 connectDB();
 
+
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
@@ -32,6 +36,8 @@ initializeSocket(server);
 
 server.listen(PORT, () => {
   logger.info(`WebSocket server running on port ${PORT}`);
+  // Connect to Redis after server starts
+  connectRedis();
 });
 //Browser → HTTP Server → Socket.io → Persistent Connection
 /*What We Achieved

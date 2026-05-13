@@ -4,6 +4,15 @@ const registerMessageHandlers = require("./handlers/message.handler"); // Fixed 
 const logger = require("../utils/logger");
 const jwt = require("jsonwebtoken");
 
+
+const { createAdapter } =
+  require("@socket.io/redis-adapter");
+
+const {
+  pubClient,
+  subClient
+} = require("../config/redis");
+
 const User =
   require("../model/user.model");
 let io;
@@ -77,7 +86,12 @@ function initializeSocket(server) {
   }
 
 });
-
+io.adapter(
+  createAdapter(
+    pubClient,
+    subClient
+  )
+);
   io.on(SOCKET_EVENTS.CONNECTION, (socket) => {
     logger.info(
   `User connected:
