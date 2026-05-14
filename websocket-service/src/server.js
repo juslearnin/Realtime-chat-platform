@@ -1,4 +1,7 @@
-require("dotenv").config();
+require("dotenv").config({
+  path:
+    process.env.DOTENV_CONFIG_PATH
+});
 const logger = require("./utils/logger");
 const express = require("express");
 const http = require("http");

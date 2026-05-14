@@ -10,6 +10,8 @@ const {
   getUser 
 } = require("../../services/userRegistry");
 
+const { generateAIResponse } = require("../../services/ai.service");
+
 const logger = require("../../utils/logger");
 const { messageSchema } = require("../../validators/message.validator");
 
@@ -62,40 +64,81 @@ function registerMessageHandlers(io, socket) {
     }
   });
 
-  // 3. Send Message
+  // 3. Send Message - FINAL CORRECTED VERSION
   socket.on(SOCKET_EVENTS.SEND_MESSAGE, async (data) => {
     try {
+      // A. VALIDATION
       const { error } = messageSchema.validate(data);
       if (error) {
-        logger.warn(`Invalid message from ${socket.id}`);
-        socket.emit("error", { message: error.details[0].message });
-        return;
+        logger.warn(`Validation failed for ${socket.id}`);
+        return socket.emit("error", { message: error.details[0].message });
       }
 
       const { roomId, message } = data;
-      const user = getUser(socket.id);
-      const displayName = user ? user.username : `User-${socket.id.substring(0, 5)}`;
 
-      // Save to MongoDB
+      // B. IDENTITY FIX: Get user from the JWT-authenticated socket object
+      // If your middleware works, socket.user contains the real DB data
+      const userId = socket.user._id; 
+      const username = socket.user.username; // This ensures it uses the real name, not a fallback
+
+      // C. SAVE USER MESSAGE
       const newMessage = new Message({
         roomId,
-        socketId: socket.user._id,
-        username: displayName, // Added username to the saved model
+        userId,       
+        username,     
         message
       });
       await newMessage.save();
 
+      // D. BROADCAST USER MESSAGE
       io.to(roomId).emit(SOCKET_EVENTS.RECEIVE_MESSAGE, {
-        username: displayName, 
-        message: message,
-        socketId: socket.id,
+        username, 
+        message,
+        userId,       
         timestamp: newMessage.createdAt
       });
 
-      logger.info(`Message from ${displayName} saved and broadcasted`);
+      // E. BOT PIPELINE (The "Silent Bot" Fix)
+      if (message.trim().startsWith("@bot")) {
+        const cleanMessage = message.replace("@bot", "").trim();
+
+        // 1. Notify UI that bot is thinking
+        io.to(roomId).emit("bot_typing", { username: "SynapseBot" });
+
+        try {
+          // 2. Call AI Service
+          const aiResponse = await generateAIResponse(cleanMessage);
+
+          // 3. SAVE BOT MESSAGE TO DB (So history works!)
+          const botMessage = new Message({
+            roomId,
+            userId: "000000000000000000000000", // Static valid MongoID for Bot
+            username: "SynapseBot",
+            message: aiResponse
+          });
+          await botMessage.save();
+
+          // 4. BROADCAST BOT MESSAGE
+          io.to(roomId).emit(SOCKET_EVENTS.RECEIVE_MESSAGE, {
+            username: "SynapseBot",
+            message: aiResponse,
+            userId: "AI_BOT_ID",
+            isBot: true,
+            timestamp: botMessage.createdAt
+          });
+
+        } catch (aiErr) {
+          logger.error(`AI Failure: ${aiErr.message}`);
+          // Send a specific error to the user if the AI fails
+          socket.emit("error", { message: "SynapseBot is offline. Check API keys/credits." });
+        } finally {
+          io.to(roomId).emit("bot_stop_typing");
+        }
+      }
+
     } catch (err) {
-      logger.error(`Message error: ${err.message}`);
-      socket.emit("error", { message: "Server error" });
+      logger.error(`System Error: ${err.message}`);
+      socket.emit("error", { message: "Message could not be sent." });
     }
   });
 

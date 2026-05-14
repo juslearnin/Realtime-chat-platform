@@ -39,7 +39,8 @@ function initializeSocket(server) {
       return next(
         new Error("Authentication error")
       );
-
+console.log("DEBUG: Using JWT_SECRET:", process.env.JWT_SECRET);
+const decoded = jwt.verify(token, process.env.JWT_SECRET);
     }
 
     // Verify token
@@ -79,9 +80,11 @@ function initializeSocket(server) {
       `Socket auth error: ${err.message}`
     );
 
-    next(
-      new Error("Authentication failed")
-    );
+    console.log(err);
+
+next(
+  new Error(err.message)
+);
 
   }
 

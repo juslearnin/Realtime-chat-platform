@@ -34,7 +34,14 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
     // 1. Initialize Connection
-    const socket = io("http://localhost:5000");
+    const socket = io(
+  "http://localhost:5000",
+  {
+    auth: {
+      token: localStorage.getItem("token")
+    }
+  }
+);
 
     // Constants to match your socket.events.js
     const EVENTS = {
@@ -48,6 +55,23 @@
     socket.on("connect", () => {
         document.getElementById("status").textContent = "Connected as: " + socket.id;
     });
+
+    socket.on("connect", () => {
+
+  console.log(
+    "Socket connected"
+  );
+
+});
+
+socket.on("connect_error", err => {
+
+  console.log(
+    "Socket auth failed:",
+    err.message
+  );
+
+});
 
     // 2. Join Room Logic
     function joinRoom() {
@@ -87,6 +111,7 @@
         // data.socketId comes from your backend: io.to(roomId).emit("receiveMessage", { socketId, message })
        li.innerHTML = `<strong>${data.username}:</strong> ${data.message}`;
         document.getElementById("messages").appendChild(li);
+        
         window.scrollTo(0, document.body.scrollHeight);
     });
  
