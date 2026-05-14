@@ -1,0 +1,7 @@
+node_modules
+.env
+.git
+.env.server1
+.env.server2
+websocket-service/.env.server1  
+websocket-service/.env.server2
